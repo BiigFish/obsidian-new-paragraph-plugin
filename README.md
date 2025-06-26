@@ -1,3 +1,9 @@
+# Obsidian New Paragraph Plugin
+
+This plugin makes adds a hotkey so when you hit the Enter key for a new line, it creates two new lines to create a paragraph.
+
+Drop repo into the plugin folder in Obsidian
+
 # Obsidian Sample Plugin
 
 This is a sample plugin for Obsidian (https://obsidian.md).
