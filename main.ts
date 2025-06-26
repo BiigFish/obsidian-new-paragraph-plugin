@@ -1,4 +1,4 @@
-import { Plugin, Editor } from 'obsidian';
+import { Plugin, Editor, EditorPosition } from 'obsidian';
 
 // Define the main class for your plugin, extending Obsidian's Plugin class.
 export default class DoubleNewlinePlugin extends Plugin {
@@ -10,29 +10,39 @@ export default class DoubleNewlinePlugin extends Plugin {
     async onload() {
         console.log('Loading Double Newline Plugin');
 
-        // This adds an editor command that inserts two newlines.
-        // It's designed to be remapped to the 'Enter' key by the user in Obsidian's hotkey settings.
+        // Register a command that will be triggered by the Enter key
         this.addCommand({
-            id: 'insert-two-newlines', // Unique ID for the command
-            name: 'Insert two newlines', // Display name for the command in settings
-
-            // editorCallback is a function that runs when the command is triggered in the editor.
-            // It receives the current Editor instance as an argument.
+            id: 'insert-double-newline',
+            name: 'Insert double newline',
+            hotkeys: [{ modifiers: [], key: 'Enter' }],
             editorCallback: (editor: Editor) => {
-                // Get the current cursor position.
-                const cursor = editor.getCursor();
-
-                // Insert two newline characters at the current cursor position.
-                // The cursor will then be placed after the inserted newlines.
-                editor.replaceRange('\n\n', cursor);
+                this.insertDoubleNewline(editor);
             }
         });
 
-        // IMPORTANT NOTE FOR USERS:
-        // This plugin registers a command. To make it trigger specifically when you hit 'Enter',
-        // you will need to manually remap the 'Enter' key in Obsidian's Hotkeys settings.
-        // Search for the "Insert two newlines" command and assign 'Enter' as its hotkey.
-        // This will override Obsidian's default single newline behavior.
+        // Also keep the manual command for users who want to trigger it manually
+        this.addCommand({
+            id: 'insert-two-newlines',
+            name: 'Insert two newlines',
+            editorCallback: (editor: Editor) => {
+                this.insertDoubleNewline(editor);
+            }
+        });
+    }
+
+    /**
+     * Insert two newlines at the current cursor position
+     */
+    private insertDoubleNewline(editor: Editor) {
+        const cursor = editor.getCursor();
+        editor.replaceRange('\n\n', cursor);
+        
+        // Move cursor to the position after the second newline
+        const newPosition: EditorPosition = {
+            line: cursor.line + 2,
+            ch: 0
+        };
+        editor.setCursor(newPosition);
     }
 
     /**
