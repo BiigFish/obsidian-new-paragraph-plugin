@@ -1,0 +1,13 @@
+# User-specific files
+.DS_Store
+.vscode/
+
+# Node dependencies
+node_modules/
+
+# Compilation output (NOT main.js)
+# Note: We keep main.js in the root for Obsidian compatibility
+# but we ignore other temporary build artifacts if they existed.
+
+# Local environment files
+.env

@@ -1,55 +1,51 @@
-import { Plugin, Editor, EditorPosition } from 'obsidian';
+import { Plugin, Editor, MarkdownView } from 'obsidian';
 
 // Define the main class for your plugin, extending Obsidian's Plugin class.
 export default class DoubleNewlinePlugin extends Plugin {
 
     /**
      * This method is called when the plugin is loaded.
-     * It's where you register commands, event listeners, etc.
      */
     async onload() {
-        console.log('Loading Double Newline Plugin');
+        // Register a DOM event listener for the 'Enter' key in the capture phase (true)
+        // This allows us to intercept the key before Obsidian's default handler.
+        this.registerDomEvent(document, 'keydown', (evt: KeyboardEvent) => {
+            // Only trigger on Enter with no modifiers
+            if (evt.key === 'Enter' && !evt.shiftKey && !evt.ctrlKey && !evt.altKey && !evt.metaKey) {
+                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
-        // Register a command that will be triggered by the Enter key
-        this.addCommand({
-            id: 'insert-double-newline',
-            name: 'Insert double newline',
-            hotkeys: [{ modifiers: [], key: 'Enter' }],
-            editorCallback: (editor: Editor) => {
-                this.insertDoubleNewline(editor);
-            }
-        });
+                // Only act if we have a markdown view and the editor has focus
+                if (activeView && activeView.editor.hasFocus()) {
+                    const editor = activeView.editor;
+                    const cursor = editor.getCursor();
+                    const line = editor.getLine(cursor.line);
 
-        // Also keep the manual command for users who want to trigger it manually
-        this.addCommand({
-            id: 'insert-two-newlines',
-            name: 'Insert two newlines',
-            editorCallback: (editor: Editor) => {
-                this.insertDoubleNewline(editor);
+                    /**
+                     * listOrSpecialRegex matches:
+                     * 1. Standard lists: -, *, +, 1.
+                     * 2. Task lists: - [ ], - [x]
+                     * 3. Blockquotes: >
+                     * 4. Tables: |
+                     * 5. Code block markers: ```, ~~~
+                     */
+                    const listOrSpecialRegex = /^(\s*)([-*+]|\d+\.|>|\||```|~~~|[-*+]\s?\[[ xX]\])(\s|$)/;
+
+                    // If we are NOT in a list or special context, proceed with double newline
+                    if (!listOrSpecialRegex.test(line)) {
+                        evt.preventDefault();    // Stop Obsidian from inserting its own newline
+                        evt.stopPropagation();   // Stop the event from bubbling up further
+                        this.insertDoubleNewline(editor);
+                    }
+                }
             }
-        });
+        }, true); // The 'true' here enables capture phase
     }
 
     /**
      * Insert two newlines at the current cursor position
      */
     private insertDoubleNewline(editor: Editor) {
-        const cursor = editor.getCursor();
-        editor.replaceRange('\n\n', cursor);
-        
-        // Move cursor to the position after the second newline
-        const newPosition: EditorPosition = {
-            line: cursor.line + 2,
-            ch: 0
-        };
-        editor.setCursor(newPosition);
-    }
-
-    /**
-     * This method is called when the plugin is unloaded.
-     * Use it to clean up any resources or listeners if any were registered.
-     */
-    onunload() {
-        console.log('Unloading Double Newline Plugin');
+        // replaceSelection handles both replacing selected text and moving the cursor automatically
+        editor.replaceSelection('\n\n');
     }
 }
